@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Unemployment Forecast – Enhanced UI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    :root { 
+      --bg: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 100%);
+      --panel: rgba(21, 27, 46, 0.8);
+      --panel-hover: rgba(31, 38, 60, 0.9);
+      --muted: #8ea0c9; 
+      --text: #eaf0ff; 
+      --accent: #62ace6;
+      --accent-glow: rgba(98, 172, 230, 0.3);
+      --success: #4ade80;
+      --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body { 
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background: #0a0e1a;
+      background-image: 
+        radial-gradient(at 20% 10%, rgba(102, 126, 234, 0.1) 0px, transparent 50%),
+        radial-gradient(at 80% 80%, rgba(118, 75, 162, 0.1) 0px, transparent 50%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px 0;
+    }
+    
+    .wrap { 
+      max-width: 1100px; 
+      margin: 0 auto; 
+      padding: 0 20px; 
+    }
+    
+    .card { 
+      background: var(--panel);
+      backdrop-filter: blur(20px);
+      border-radius: 24px; 
+      padding: 32px; 
+      box-shadow: 
+        0 20px 60px rgba(0,0,0,.4),
+        0 0 1px rgba(255,255,255,.1) inset;
+      border: 1px solid rgba(255,255,255,.05);
+      transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+      box-shadow: 
+        0 25px 70px rgba(0,0,0,.5),
+        0 0 1px rgba(255,255,255,.15) inset;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    
+    h1 { 
+      font-size: 32px; 
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .emoji { font-size: 36px; }
+    
+    p.muted { 
+      color: var(--muted); 
+      margin-top: 6px;
+      font-size: 14px;
+    }
+    
+    .badge { 
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px; 
+      background: rgba(98, 172, 230, 0.1);
+      border: 1px solid rgba(98, 172, 230, 0.3);
+      color: #62ace6; 
+      border-radius: 999px; 
+      font-size: 13px;
+      font-weight: 500;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--success);
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    
+    .tabs { 
+      display: flex; 
+      gap: 12px; 
+      margin-bottom: 32px;
+      padding: 6px;
+      background: rgba(15, 21, 40, 0.6);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.05);
+    }
+    
+    .tab-btn { 
+      flex: 1;
+      padding: 12px 20px; 
+      border-radius: 12px; 
+      background: transparent;
+      color: var(--muted); 
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .tab-btn:hover {
+      color: var(--text);
+      background: rgba(255,255,255,.03);
+    }
+    
+    .tab-btn.active { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .grid { 
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    @media (max-width: 768px) { 
+      .grid { grid-template-columns: 1fr; }
+      .header { flex-direction: column; }
+    }
+    
+    .row { 
+      display: flex; 
+      gap: 16px; 
+      flex-wrap: wrap;
+    }
+    
+    .field {
+      flex: 1;
+      min-width: 220px;
+    }
+    
+    label { 
+      display: block; 
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted); 
+      margin-bottom: 8px;
+      letter-spacing: 0.3px;
+    }
+    
+    input, select { 
+      width: 100%; 
+      padding: 12px 16px; 
+      border-radius: 12px; 
+      background: rgba(16, 22, 42, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(39, 52, 85, 0.8);
+      color: var(--text);
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      background: rgba(16, 22, 42, 0.95);
+    }
+    
+    input:hover, select:hover {
+      border-color: rgba(98, 172, 230, 0.5);
+    }
+    
+    input[type="number"]::-webkit-outer-spin-button, 
+    input[type="number"]::-webkit-inner-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    
+    .btn { 
+      padding: 12px 24px; 
+      border-radius: 12px; 
+      border: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff; 
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn.sec { 
+      background: rgba(28, 37, 66, 0.8);
+      border: 1px solid rgba(43, 59, 110, 0.8);
+      box-shadow: none;
+    }
+    
+    .btn.sec:hover {
+      background: rgba(35, 47, 80, 0.9);
+      border-color: rgba(98, 172, 230, 0.5);
+    }
+    
+    .btn:disabled { 
+      opacity: .5; 
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .hist { 
+      margin-top: 24px;
+      padding: 20px;
+      background: rgba(15, 21, 40, 0.4);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.05);
+    }
+    
+    .hist label {
+      margin-bottom: 12px;
+    }
+    
+    .hist-row { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr auto; 
+      gap: 12px; 
+      margin-bottom: 12px;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .out { 
+      margin-top: 24px; 
+      padding: 20px; 
+      background: rgba(16, 22, 42, 0.6);
+      border: 1px solid rgba(39, 52, 85, 0.8);
+      border-radius: 16px;
+      animation: fadeIn 0.4s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-top: 16px;
+    }
+    
+    th, td { 
+      border-bottom: 1px solid rgba(39, 52, 85, 0.5);
+      padding: 12px; 
+      text-align: left; 
+      font-size: 14px;
+    }
+    
+    th {
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(98, 172, 230, 0.05);
+    }
+    
+    tr:hover {
+      background: rgba(98, 172, 230, 0.03);
+    }
+    
+    .hint { 
+      font-size: 13px; 
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    
+    .footer { 
+      margin-top: 32px; 
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,.05);
+      color: var(--muted); 
+      font-size: 13px; 
+      text-align: center;
+    }
+    
+    canvas { 
+      width: 100%; 
+      max-height: 400px;
+      background: rgba(15, 21, 40, 0.4);
+      border: 1px solid rgba(39, 52, 85, 0.8);
+      border-radius: 16px; 
+      padding: 16px;
+      margin-top: 24px;
+    }
+    
+    code { 
+      color: #b3d4ff;
+      background: rgba(98, 172, 230, 0.1);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    
+    .prediction-result {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--success);
+      margin: 16px 0;
+      text-align: center;
+      padding: 20px;
+      background: rgba(74, 222, 128, 0.1);
+      border-radius: 12px;
+      border: 1px solid rgba(74, 222, 128, 0.2);
+    }
+    
+    .cohort-info {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    
+    input[type="file"] {
+      padding: 16px;
+      background: rgba(16, 22, 42, 0.6);
+      cursor: pointer;
+    }
+    
+    input[type="file"]::file-selector-button {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 12px;
+      transition: all 0.3s ease;
+    }
+    
+    input[type="file"]::file-selector-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="header">
+        <div>
+          <h1><span class="emoji">📈</span> Unemployment Forecast</h1>
+          <p class="muted">CatBoost Auto-Lag Model • Real-time Predictions</p>
+        </div>
+        <span class="badge">
+          <span class="status-dot"></span>
+          Connected
+        </span>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="tabSingleBtn">Single Prediction</button>
+        <button class="tab-btn" id="tabBatchBtn">Batch CSV</button>
+      </div>
+
+      <!-- ========== TAB: SINGLE ========== -->
+      <section id="tabSingle">
+        <div class="grid">
+          <div>
+            <label>Year</label>
+            <input id="year" type="number" value="2566" />
+          </div>
+          <div>
+            <label>Quarter</label>
+            <select id="quarter">
+              <option value="1">Q1</option>
+              <option value="2" selected>Q2</option>
+              <option value="3">Q3</option>
+              <option value="4">Q4</option>
+            </select>
+          </div>
+          <div>
+            <label>Time Index (Target)</label>
+            <input id="timeIndex" type="number" value="39" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Gender</label>
+            <select id="gender">
+              <option>All</option>
+              <option>Male</option>
+              <option selected>Female</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Age Group</label>
+            <select id="ageGroup">
+              <option>15-19</option>
+              <option selected>20-24</option>
+              <option>25-29</option>
+              <option>30-34</option>
+              <option>35-39</option>
+              <option>40-49</option>
+              <option>50-59</option>
+              <option>60</option>
+              <option>All</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="hist">
+          <label>Historical Data (Past Values Only)</label>
+          <p class="hint">Add rows with past <code>time_index_q</code> and corresponding <code>value_pct</code></p>
+          <div id="histList"></div>
+          <div class="row" style="margin-top:16px;">
+            <button class="btn sec" id="addHist">+ Add Row</button>
+            <button class="btn sec" id="fillLast4">↻ Fill Sample Data</button>
+          </div>
+          <p class="hint" style="margin-top:12px;">💡 Recommended: Add at least 4 recent historical values for best accuracy</p>
+        </div>
+
+        <div style="margin-top:24px;">
+          <button class="btn" id="btnPredict">Generate Prediction</button>
+        </div>
+
+        <canvas id="histChart" style="display:none;"></canvas>
+        <div class="out" id="singleOut" style="display:none;"></div>
+      </section>
+
+      <!-- ========== TAB: BATCH ========== -->
+      <section id="tabBatch" style="display:none">
+        <p class="hint" style="margin-bottom:16px;">
+          Upload CSV file with columns: <code>year</code>, <code>quarter_num</code>, <code>time_index_q</code>, <code>value_pct</code> + one-hot encoded gender/age columns
+        </p>
+        <input type="file" id="csvFile" accept=".csv" />
+        <div style="margin-top:16px;">
+          <button class="btn" id="btnUpload">Upload & Predict</button>
+        </div>
+        <div class="out" id="batchOut" style="display:none;"></div>
+      </section>
+
+      <div class="footer">Built for FastAPI Backend • Powered by CatBoost ML</div>
+    </div>
+  </div>
+
+  <script>
+    const tabSingleBtn = document.getElementById('tabSingleBtn');
+    const tabBatchBtn  = document.getElementById('tabBatchBtn');
+    const tabSingle    = document.getElementById('tabSingle');
+    const tabBatch     = document.getElementById('tabBatch');
+
+    tabSingleBtn.onclick = () => {
+      tabSingleBtn.classList.add('active'); 
+      tabBatchBtn.classList.remove('active');
+      tabSingle.style.display='block'; 
+      tabBatch.style.display='none';
+    };
+    
+    tabBatchBtn.onclick = () => {
+      tabBatchBtn.classList.add('active'); 
+      tabSingleBtn.classList.remove('active');
+      tabBatch.style.display='block'; 
+      tabSingle.style.display='none';
+    };
+
+    const histList = document.getElementById('histList');
+    const addHist  = document.getElementById('addHist');
+    const fillLast4Btn = document.getElementById('fillLast4');
+
+    function makeHistRow(tq='', val='') {
+      const row = document.createElement('div');
+      row.className = 'hist-row';
+      row.innerHTML = `
+        <input placeholder="time_index_q" type="number" value="${tq}" />
+        <input placeholder="value_pct" type="number" step="0.01" value="${val}" />
+        <button class="btn sec" type="button">Remove</button>
+      `;
+      row.querySelector('button').onclick = () => row.remove();
+      histList.appendChild(row);
+    }
+
+    function clearHist() {
+      histList.innerHTML = '';
+    }
+
+    function fillDefault4() {
+      clearHist();
+      makeHistRow(35, 6.0);
+      makeHistRow(36, 6.2);
+      makeHistRow(37, 6.1);
+      makeHistRow(38, 6.3);
+    }
+    fillDefault4();
+
+    addHist.onclick = () => makeHistRow();
+    fillLast4Btn.onclick = () => fillDefault4();
+
+    const btnPredict = document.getElementById('btnPredict');
+    const singleOut  = document.getElementById('singleOut');
+    const histCanvas = document.getElementById('histChart');
+    let chartInstance = null;
+
+    btnPredict.onclick = async () => {
+      const year = parseInt(document.getElementById('year').value, 10);
+      const quarter_num = parseInt(document.getElementById('quarter').value, 10);
+      const time_index_q = parseInt(document.getElementById('timeIndex').value, 10);
+      const gender = document.getElementById('gender').value;
+      const age_group = document.getElementById('ageGroup').value;
+
+      const rows = [...histList.querySelectorAll('.hist-row')];
+      const history = rows.map(r => {
+        const inputs = r.querySelectorAll('input');
+        return {
+          time_index_q: Number(inputs[0].value),
+          value_pct:    Number(inputs[1].value)
+        }
+      }).filter(h => Number.isFinite(h.time_index_q) && Number.isFinite(h.value_pct));
+
+      const hasPast = history.some(h => h.time_index_q < time_index_q);
+      if (!hasPast) {
+        alert('Please add at least one historical row with time_index_q less than target value');
+        return;
+      }
+
+      btnPredict.disabled = true;
+      singleOut.style.display = 'block';
+      singleOut.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">⏳ Generating prediction...</div>';
+
+      try {
+        const res = await fetch('/predict/single', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ year, quarter_num, time_index_q, gender, age_group, history })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(JSON.stringify(data));
+
+        singleOut.innerHTML = `
+          <div class="prediction-result">${Number(data.prediction_value_pct).toFixed(3)}%</div>
+          <div class="cohort-info">Cohort: ${data.cohort_key}</div>
+          <table>
+            <thead><tr><th>Lag Feature</th><th>Computed Value</th></tr></thead>
+            <tbody>
+              <tr><td>y_lag1</td><td>${Number(data.computed_lags.y_lag1).toFixed(3)}</td></tr>
+              <tr><td>y_lag4</td><td>${Number(data.computed_lags.y_lag4).toFixed(3)}</td></tr>
+              <tr><td>y_diff1</td><td>${Number(data.computed_lags.y_diff1).toFixed(3)}</td></tr>
+              <tr><td>y_roll4</td><td>${Number(data.computed_lags.y_roll4).toFixed(3)}</td></tr>
+            </tbody>
+          </table>
+        `;
+
+        const histSorted = history
+          .filter(h => h.time_index_q < time_index_q)
+          .sort((a,b) => a.time_index_q - b.time_index_q);
+
+        const xHist = histSorted.map(h => h.time_index_q);
+        const yHist = histSorted.map(h => h.value_pct);
+        const xPred = [time_index_q];
+        const yPred = [Number(data.prediction_value_pct)];
+
+        histCanvas.style.display = 'block';
+
+        const chartData = {
+          labels: [...xHist, ...xPred],
+          datasets: [
+            {
+              label: 'Historical Values',
+              data: [...yHist, null],
+              borderColor: 'rgba(98, 172, 230, 1)',
+              backgroundColor: 'rgba(98, 172, 230, 0.1)',
+              borderWidth: 3,
+              tension: 0.3,
+              pointRadius: 5,
+              pointBackgroundColor: 'rgba(98, 172, 230, 1)',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              fill: true
+            },
+            {
+              label: 'Prediction',
+              data: [...Array(xHist.length).fill(null), ...yPred],
+              borderColor: 'rgba(74, 222, 128, 1)',
+              backgroundColor: 'rgba(74, 222, 128, 0.2)',
+              borderWidth: 3,
+              borderDash: [8, 4],
+              pointRadius: 7,
+              pointBackgroundColor: 'rgba(74, 222, 128, 1)',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2
+            }
+          ]
+        };
+
+        const chartOptions = {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'nearest', intersect: false },
+          scales: {
+            x: { 
+              title: { display: true, text: 'Time Index (Quarter)', color: '#8ea0c9', font: { size: 13, weight: '600' } },
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#8ea0c9' }
+            },
+            y: { 
+              title: { display: true, text: 'Unemployment Rate (%)', color: '#8ea0c9', font: { size: 13, weight: '600' } },
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#8ea0c9' }
+            }
+          },
+          plugins: {
+            legend: { 
+              labels: { color: '#eaf0ff', font: { size: 13, weight: '500' }, padding: 15 }
+            },
+            tooltip: { 
+              backgroundColor: 'rgba(15, 21, 40, 0.95)',
+              titleColor: '#eaf0ff',
+              bodyColor: '#8ea0c9',
+              borderColor: 'rgba(98, 172, 230, 0.3)',
+              borderWidth: 1,
+              padding: 12,
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(3)}%`
+              }
+            }
+          }
+        };
+
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(histCanvas.getContext('2d'), {
+          type: 'line',
+          data: chartData,
+          options: chartOptions
+        });
+
+      } catch (e) {
+        singleOut.innerHTML = `<div style="color:#f87171; text-align:center; padding:20px;">❌ Error: ${e.message}</div>`;
+      } finally {
+        btnPredict.disabled = false;
+      }
+    };
+
+    const btnUpload = document.getElementById('btnUpload');
+    const csvFile   = document.getElementById('csvFile');
+    const batchOut  = document.getElementById('batchOut');
+
+    btnUpload.onclick = async () => {
+      if (!csvFile.files[0]) { 
+        alert('Please select a CSV file'); 
+        return; 
+      }
+      
+      btnUpload.disabled = true;
+      batchOut.style.display = 'block';
+      batchOut.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">⏳ Processing batch predictions...</div>';
+
+      const fd = new FormData();
+      fd.append('file', csvFile.files[0]);
+
+      try {
+        const res = await fetch('/predict/batch', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(JSON.stringify(data));
+
+        const rows = data.preview || [];
+        let html = `<div style="font-size:18px; font-weight:600; margin-bottom:16px; color:var(--success);">✓ Successfully processed ${data.rows} rows</div>`;
+        
+        if (rows.length) {
+          html += `<table><thead><tr>`;
+          Object.keys(rows[0]).forEach(k => html += `<th>${k}</th>`);
+          html += `</tr></thead><tbody>`;
+          rows.forEach(r => {
+            html += `<tr>${Object.values(r).map(v => `<td>${v}</td>`).join('')}</tr>`;
+          });
+          html += `</tbody></table>`;
+        } else {
+          html += `<div class="hint">No preview available</div>`;
+        }
+        batchOut.innerHTML = html;
+      } catch (e) {
+        batchOut.innerHTML = `<div style="color:#f87171; text-align:center; padding:20px;">❌ Error: ${e.message}</div>`;
+      } finally {
+        btnUpload.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
